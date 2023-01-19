@@ -7,19 +7,22 @@ space: .ascii " "
 
 .text
 _start:
-	# Load array1[0] into t0
-	la t0, array1
+	jal print_array1
+
+	la a0, array1
+	li a1, 3
+	li a2, 6
+	jal swap
+
+	# partition the array
 	
+	
+	# Printing the array
 	jal print_array1
 	
 	# Exit
 	li a7, 10
 	ecall
-	
-partition:
-	# Load array1[2] (the pivot) into t1
-	lw t1, 8(t0)
-	
 
 print_array1:
 	# Load array1[0] into t0
@@ -52,10 +55,29 @@ print_array1:
 			la a0, newline
 			ecall
 			ret
-		
-print_newline:
-	li a7, 4
-	la a0, newline
-	ecall
-	ret
 
+swap: 
+	# Swap array[a1] and array[a2]
+	# Assume a0 store the address of the first element
+	
+	# store the address of array[a1] into t0
+	slli t0, a1, 2
+	add t0, t0, a0
+	
+	# store the address of array[a2] into t1
+	slli t1, a2, 2
+	add t1, t1, a0
+	
+	# load array[a1] to t2
+	lw t2, (t0)
+	
+	# load array[a2] to t3
+	lw t3, (t1)
+	
+	# store t3 to array[a1]
+	sw t3, (t0)
+	
+	# store t2 to array[a2]
+	sw t2, (t1)
+	
+	ret
