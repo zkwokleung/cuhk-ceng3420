@@ -1,5 +1,31 @@
 .global _start
 
+.macro print_newline
+	# Print new line
+	li a7, 4
+	la a0, newline
+	ecall
+.end_macro
+
+.macro println(%val)
+	# Print the value 
+	li a7, 1
+	lb a0, %val
+	ecall
+	
+	print_newline
+.end_macro
+
+.macro printAln(%val)
+	# Print the Address of val
+	li a7, 1
+	la a0, %val
+	ecall
+	
+	# New line
+	print_newline
+.end_macro
+
 #########################################
 #	1: define variables
 #########################################
@@ -14,20 +40,10 @@ _start:
 #	2: print addresses of variables
 #########################################
 	# Print the address of var1
-	li a7, 1
-	la a0, var1
-	ecall
-	
-	# New line
-	jal print_newline
+	printAln var1
 	
 	# Print the addres of var2
-	li a7, 1
-	la a0, var2
-	ecall
-	
-	# New line
-	jal print_newline
+	printAln var2
 	
 #########################################
 #	3: Change the value of var1 and var2
@@ -70,29 +86,9 @@ _start:
 	
 print_vars:
 	# Print the value of var1
-	li a7, 1
-	lb a0, var1
-	ecall
-	
-	# New line
-	li a7, 4
-	la a0, newline
-	ecall
-
+	println var1
 	
 	# Print the value of var2
-	li a7, 1
-	lb a0, var2
-	ecall
+	println var2
 	
-	# New line
-	li a7, 4
-	la a0, newline
-	ecall
-	ret
-
-print_newline:
-	li a7, 4
-	la a0, newline
-	ecall
 	ret
