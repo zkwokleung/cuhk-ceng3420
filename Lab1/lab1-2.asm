@@ -2,27 +2,70 @@
 
 .data
 array1: .word -1 22 8 35 5 4 11 2 1 78
+low: .byte 0
+high: .byte 9
+i: .byte -1
+j: .byte 0
 newline: .ascii "\n"
 space: .ascii " "
 
 .text
 _start:
+	# Print the array before the partition
 	jal print_array1
 
+	# Swap the 3rd element in the array to the end 
 	la a0, array1
-	li a1, 3
-	li a2, 6
+	li a1, 2
+	li a2, 9
 	jal swap
 
 	# partition the array
+	# load the pivot into s0
+	lb s0, 36(a0)
 	
+	# load the low pointer into s1
+	la s1, low
 	
-	# Printing the array
-	jal print_array1
+	# load the high pointer into s2
+	la s2, high
 	
-	# Exit
-	li a7, 10
-	ecall
+	# load i into s3
+	la s3, i
+	
+	# load j into s4
+	la s4, j
+	
+	partition_loop:
+		
+		
+		# jump to the end of the if statement if s4 > s0
+		bgt s4, s0, end_partition_if
+		
+		# increment s3 and swap array[s3] and array[s1]
+		la a0, array1
+		lb a1, (s3)
+		lb a2, (s1)
+		jal swap
+		
+		end_partition_if:
+			# back to the start of the loop if s1 < s2 and increase s1
+			addi s1, s1, 1
+			blt s1, s2, partition_loop
+		
+		end_partition_loop:
+			# swap array[s3+1] with array[s2]
+			la a0, array1
+			lb a1, (s3)
+			lb a2, (s2)
+			jal swap
+	
+			# Printing the array
+			jal print_array1
+			
+			# Exit
+			li a7, 10
+			ecall
 
 print_array1:
 	# Load array1[0] into t0
@@ -81,3 +124,4 @@ swap:
 	sw t2, (t1)
 	
 	ret
+	
