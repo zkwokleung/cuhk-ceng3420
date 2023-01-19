@@ -2,10 +2,6 @@
 
 .data
 array1: .word -1 22 8 35 5 4 11 2 1 78
-low: .byte 0
-high: .byte 9
-i: .byte -1
-j: .byte 0
 newline: .ascii "\n"
 space: .ascii " "
 
@@ -14,7 +10,7 @@ _start:
 	# Print the array before the partition
 	jal print_array1
 
-	# Swap the 3rd element in the array to the end 
+	# Swap the pivot element to the end 
 	la a0, array1
 	li a1, 2
 	li a2, 9
@@ -25,39 +21,53 @@ _start:
 	lb s0, 36(a0)
 	
 	# load the low pointer into s1
-	la s1, low
+	li s1, 0
 	
 	# load the high pointer into s2
-	la s2, high
+	li s2, 9
 	
 	# load i into s3
-	la s3, i
+	li s3, -1
 	
 	# load j into s4
-	la s4, j
+	li s4, 0
+	
+	# i <- lo-1
+	li t0, 0
+	addi t0, t0, -1
 	
 	partition_loop:
-		
+		# get array[s4]
+		# store the address of array[a1] into t1
+		slli t0, s4, 2
+		add t0, t0, a0
+		lb t1, (t0)
 		
 		# jump to the end of the if statement if s4 > s0
-		bgt s4, s0, end_partition_if
+		bgt t1, s0, end_partition_if
 		
-		# increment s3 and swap array[s3] and array[s1]
+		# i <- i + 1
+		addi s3, s3, 1
+		
+		# swap A[i] with A[j];
 		la a0, array1
-		lb a1, (s3)
-		lb a2, (s1)
+		mv a1, s3
+		mv a2, s4
 		jal swap
 		
 		end_partition_if:
 			# back to the start of the loop if s1 < s2 and increase s1
-			addi s1, s1, 1
-			blt s1, s2, partition_loop
+			addi s4, s4, 1
+			blt s4, s2, partition_loop
 		
 		end_partition_loop:
-			# swap array[s3+1] with array[s2]
+			# i + 1
+			addi s3, s3, 1
+			
+			# swap A[i+1] with A[hi]
 			la a0, array1
-			lb a1, (s3)
-			lb a2, (s2)
+			mv a1, s3
+			mv a2, s2
 			jal swap
 	
 			# Printing the array
