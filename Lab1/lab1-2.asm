@@ -5,6 +5,16 @@ array1: .word -1 22 8 35 5 4 11 2 1 78
 newline: .ascii "\n"
 space: .ascii " "
 
+.macro push (%reg)
+	addi sp, sp, -4
+	sw %reg, 0(sp)
+.end_macro
+
+.macro pop (%reg)
+	lw %reg, 0(sp)
+	addi sp, sp, 4
+.end_macro
+
 .text
 _start:
 	# Print the array before the partition
@@ -15,8 +25,23 @@ _start:
 	li a1, 2
 	li a2, 9
 	jal swap
+	
+	la a0, array1
+	li a1, 0
+	li a2, 9
+	jal partition
+	
+	# Printing the array
+	jal print_array1
+		
+	# Exit
+	li a7, 10
+	ecall
 
-	# partition the array
+# partition(a0 : A, a1 : low, a2 : high)
+partition:
+	push ra
+
 	# load the pivot into s0
 	lb s0, 36(a0)
 	
@@ -60,22 +85,19 @@ _start:
 			addi s4, s4, 1
 			blt s4, s2, partition_loop
 		
-		end_partition_loop:
-			# i + 1
-			addi s3, s3, 1
+	end_partition_loop:
+		# i + 1
+		addi s3, s3, 1
+		
+		# swap A[i+1] with A[hi]
+		la a0, array1
+		mv a1, s3
+		mv a2, s2
+		jal swap
+		
+		pop ra
+		ret
 			
-			# swap A[i+1] with A[hi]
-			la a0, array1
-			mv a1, s3
-			mv a2, s2
-			jal swap
-	
-			# Printing the array
-			jal print_array1
-			
-			# Exit
-			li a7, 10
-			ecall
 
 print_array1:
 	# Load array1[0] into t0
