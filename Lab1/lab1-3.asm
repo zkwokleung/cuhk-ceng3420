@@ -1,7 +1,7 @@
 .global _start
 
 .data
-array1: .word -1 22 8 35 5 4 11 2 1 78
+array1: .word -1 22 8 35 5 4 11 2 1 16
 newline: .ascii "\n"
 space: .ascii " "
 
@@ -15,158 +15,139 @@ space: .ascii " "
 	addi sp, sp, 4
 .end_macro
 
+.macro nextline
+	li a7, 4
+	la a0, newline
+	ecall
+.end_macro
+
 .text
 _start:
+	# print the array before quick sort
 	jal print_array1
-
+	
 	la a0, array1
 	li a1, 0
 	li a2, 9
 	jal quick_sort
 	
+	# print the array after quick sort
 	jal print_array1
 			
 	# Exit
 	li a7, 10
 	ecall
 	
-# Quicksort(A, lo, hi)
-# Use a0 as A, a1 as lo, a2 as hi
+# quicksort(a0 : A, a1 : low, a2 : high)
 quick_sort:
-	# Jump to the end if lo >= hi
-	bge a1, a2, quick_sort_end
+	# jump to the end if low >= high
+	bge a1, a2, end_quick_sort
 	
-	# Reserve ra for recursion
+	# save ra for recursion
 	push ra
 	
-	# store high and low in the stack
+	# save a0, a1, a2
 	push a2
 	push a1
+	push a0
 	
 	jal partition
 	
-	jal print_array1
-
-	# p - 1
-	mv t0, s0
-	addi t0, t0, -1
+	# save the return value to s0
+	mv s0, a0
 	
-	# quicksort(A, lo, p-1)
-	la a0, array1
+	# retrieve a0, a1
+	pop a0
 	pop a1
-	mv a2, t0
 	
-	# store the result of partition in the stack
+	# a2 = p - 1
+	addi a2, s0, -1
+	
+	# save the array and the return value into the stack
+	push a0
 	push s0
 	
+	# quick sort left half
 	jal quick_sort
 	
-	jal print_array1
-	
-	# p + 1
-	pop t0
-	addi t0, t0, 1
-	
-	# quicksort(A, p+1, hi)
-	la a0, array1
-	mv a1, t0
+	# retrieve the array and p
+	pop s0
+	pop a0
 	pop a2
+	
+	# a1 = p + 1
+	addi a1, s0, 1
+	
+	# quick sort the right half
 	jal quick_sort
 	
-	jal print_array1
-
-	pop ra
-	
-	quick_sort_end:
+	end_quick_sort:
+		pop ra
 		ret
-	
-# function Partition(A, lo, hi)
-# Use a0 as A, a1 as lo, a2 as hi
-# return i + 1 in s0
+
+# partition(a0 : A, a1 : low, a2 : high)
 partition:
-	# partition the array
-	# load the pivot into t0
-	slli t0, a2, 2
-	add t0, t0, a0
+	push ra
+
+	# load the pivot into s0
+	lb s0, 36(a0)
 	
-	# t1 <- i <- lo - 1
-	mv t1, a1
-	addi t1, t1, -1
+	# load the low pointer into s1
+	li s1, 0
 	
-	# t2 <- j <- lo
-	mv t2, a1
+	# load the high pointer into s2
+	li s2, 9
 	
-	# t3 <- hi - 1
-	mv t3, a2
-	addi t3, t3, -1
+	# load i into s3
+	li s3, -1
+	
+	# load j into s4
+	li s4, 0
+	
+	# i <- lo-1
+	li t0, 0
+	addi t0, t0, -1
 	
 	partition_loop:
-		# jump to the end of the if statement if j > hi - 1
-		bgt t2, t3, end_partition_loop
+		# get array[s4]
+		# store the address of array[a1] into t1
+		slli t0, s4, 2
+		add t0, t0, a0
+		lb t1, (t0)
+		
+		# jump to the end of the if statement if s4 > s0
+		bgt t1, s0, end_partition_if
 		
 		# i <- i + 1
-		addi t1, t1, 1
-		
-		# store the address of array[j] into t4
-		slli t4, t2, 2
-		add t4, t4, a0
-		
-		# store the value of array[j] into t5
-		lw t5, (t4)
-		
-		# Jump to end_if if array[j] > pivot
-		bgt t5, t0, end_partition_if
-		
-		# i <- i + 1
-		addi t1, t1, 1
-		
-		# temporary store a1, a2, t0, t1, t2, t3 in the stack
-		push a1
-		push a2
-		push t0
-		push t1
-		push t2
-		push t3
+		addi s3, s3, 1
 		
 		# swap A[i] with A[j];
 		la a0, array1
-		mv a1, t1
-		mv a2, t2
+		mv a1, s3
+		mv a2, s4
 		jal swap
 		
-		# retrieve the values from stack
-		pop t3
-		pop t2
-		pop t1
-		pop t0
-		pop a2
-		pop a1
-		
 		end_partition_if:
-			# increament j
-			addi t2, t2, 1
-			# back to the start of the loop if j <= high - 1
-			ble t2, t3, partition_loop
+			# back to the start of the loop if s1 < s2 and increase s1
+			addi s4, s4, 1
+			blt s4, s2, partition_loop
 		
-		end_partition_loop:
-			# i + 1
-			addi t1, t1, 1
-			
-			push t1
-			
-			# swap A[i+1] with A[hi]
-			la a0, array1
-			mv a1, t1
-			mv a2, a2
-			jal swap
-			
-			pop t1
-			
-			# save i + 1 to s0
-			mv s0, t1
-	
-			# return
-			ret
+	end_partition_loop:
+		# i + 1
+		addi s3, s3, 1
+		
+		# swap A[i+1] with A[hi]
+		la a0, array1
+		mv a1, s3
+		mv a2, s2
+		jal swap
+		
+		# return i + 1 in a0
+		mv a0, s3
+		
+		# return
+		pop ra
+		ret
 
 swap: 
 	# Swap array[a1] and array[a2]
@@ -194,12 +175,16 @@ swap:
 	
 	ret
 	
-print_array1:	
+
+	
+print_array1:
 	# Load array1[0] into t0
 	la t0, array1
 	# Load the tail of the array into t1
 	la t1, array1
 	addi t1, t1, 36
+	
+	nextline
 	 
 	loop_print_array1:
 		# Loop until reach the end of array1
@@ -221,8 +206,6 @@ print_array1:
 		
 		end_print_array1:
 			# Print new line
-			li a7, 4
-			la a0, newline
-			ecall
-			ret
+			nextline
 			
+			ret
