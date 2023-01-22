@@ -5,9 +5,26 @@ array1: .word -1 22 8 35 5 4 11 2 1 78
 newline: .ascii "\n"
 space: .ascii " "
 
+.macro push (%reg)
+	addi sp, sp, -4
+	sw %reg, 0(sp)
+.end_macro
+
+.macro pop (%reg)
+	lw %reg, 0(sp)
+	addi sp, sp, 4
+.end_macro
+
 .text
 _start:
+	jal print_array1
+
+	la a0, array1
+	li a1, 0
+	li a2, 9
+	jal quick_sort
 	
+	jal print_array1
 			
 	# Exit
 	li a7, 10
@@ -19,23 +36,56 @@ quick_sort:
 	# Jump to the end if lo >= hi
 	bge a1, a2, quick_sort_end
 	
+	# Reserve ra for recursion
+	push ra
 	
+	# store high and low in the stack
+	push a2
+	push a1
 	
+	jal partition
+	
+	jal print_array1
+
+	# p - 1
+	mv t0, s0
+	addi t0, t0, -1
+	
+	# quicksort(A, lo, p-1)
+	la a0, array1
+	pop a1
+	mv a2, t0
+	
+	# store the result of partition in the stack
+	push s0
+	
+	jal quick_sort
+	
+	jal print_array1
+	
+	# p + 1
+	pop t0
+	addi t0, t0, 1
+	
+	# quicksort(A, p+1, hi)
+	la a0, array1
+	mv a1, t0
+	pop a2
+	jal quick_sort
+	
+	jal print_array1
+
+	pop ra
 	
 	quick_sort_end:
-		lw ra, 0(sp)
-		addi sp, sp, 8
-		jr ra
+		ret
 	
 # function Partition(A, lo, hi)
 # Use a0 as A, a1 as lo, a2 as hi
+# return i + 1 in s0
 partition:
-	# Reserve stack for recursion
-	addi sp, sp, -8
-	sw ra, 0(sp)
-	
 	# partition the array
-	# load the pivot into s0
+	# load the pivot into t0
 	slli t0, a2, 2
 	add t0, t0, a0
 	
@@ -52,7 +102,7 @@ partition:
 	
 	partition_loop:
 		# jump to the end of the if statement if j > hi - 1
-		bgt t2, t3, end_partition_if
+		bgt t2, t3, end_partition_loop
 		
 		# i <- i + 1
 		addi t1, t1, 1
@@ -61,11 +111,22 @@ partition:
 		slli t4, t2, 2
 		add t4, t4, a0
 		
+		# store the value of array[j] into t5
+		lw t5, (t4)
+		
 		# Jump to end_if if array[j] > pivot
-		bgt t4, t0
+		bgt t5, t0, end_partition_if
 		
 		# i <- i + 1
 		addi t1, t1, 1
+		
+		# temporary store a1, a2, t0, t1, t2, t3 in the stack
+		push a1
+		push a2
+		push t0
+		push t1
+		push t2
+		push t3
 		
 		# swap A[i] with A[j];
 		la a0, array1
@@ -73,65 +134,38 @@ partition:
 		mv a2, t2
 		jal swap
 		
+		# retrieve the values from stack
+		pop t3
+		pop t2
+		pop t1
+		pop t0
+		pop a2
+		pop a1
+		
 		end_partition_if:
-			# back to the start of the loop if s1 < s2 and increase s1
+			# increament j
 			addi t2, t2, 1
-			
-			##################
-			blt s4, s2, partition_loop
+			# back to the start of the loop if j <= high - 1
+			ble t2, t3, partition_loop
 		
 		end_partition_loop:
 			# i + 1
-			addi s3, s3, 1
+			addi t1, t1, 1
+			
+			push t1
 			
 			# swap A[i+1] with A[hi]
 			la a0, array1
-			mv a1, s3
-			mv a2, s2
+			mv a1, t1
+			mv a2, a2
 			jal swap
-	
-			# Printing the array
-			jal print_array1
 			
-			# Exit
-			li a7, 10
-			ecall
-
-	partition_end:	
-		# Undo the pointer swap and return
-		addi sp, sp, 8
-		jr ra
+			pop t1
+			
+			# save i + 1 to s0
+			mv s0, t1
 	
-print_array1:	
-	# Load array1[0] into t0
-	la t0, array1
-	# Load the tail of the array into t6
-	la t6, array1
-	addi t6, t6, 36
-	 
-	loop_print_array1:
-		# Loop until reach the end of array1
-		bgt t0, t6, end_print_array1
-		
-		# Do the printing
-		li a7, 1
-		lw a0, (t0)
-		ecall
-		
-		# print a new space
-		li a7, 4
-		la a0, space
-		ecall
-		
-		# Move to array1[i+1]
-		addi t0, t0, 4
-		b loop_print_array1
-		
-		end_print_array1:
-			# Print new line
-			li a7, 4
-			la a0, newline
-			ecall
+			# return
 			ret
 
 swap: 
@@ -160,3 +194,35 @@ swap:
 	
 	ret
 	
+print_array1:	
+	# Load array1[0] into t0
+	la t0, array1
+	# Load the tail of the array into t1
+	la t1, array1
+	addi t1, t1, 36
+	 
+	loop_print_array1:
+		# Loop until reach the end of array1
+		bgt t0, t1, end_print_array1
+		
+		# Do the printing
+		li a7, 1
+		lw a0, (t0)
+		ecall
+		
+		# print a new space
+		li a7, 4
+		la a0, space
+		ecall
+		
+		# Move to array1[i+1]
+		addi t0, t0, 4
+		b loop_print_array1
+		
+		end_print_array1:
+			# Print new line
+			li a7, 4
+			la a0, newline
+			ecall
+			ret
+			
