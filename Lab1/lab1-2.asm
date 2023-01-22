@@ -26,6 +26,7 @@ _start:
 	li a2, 9
 	jal swap
 	
+	# Do the partition
 	la a0, array1
 	li a1, 0
 	li a2, 9
@@ -103,12 +104,12 @@ print_array1:
 	# Load array1[0] into t0
 	la t0, array1
 	# Load the tail of the array into t6
-	la t6, array1
-	addi t6, t6, 36
+	la t1, array1
+	addi t1, t1, 36
 	 
 	loop_print_array1:
 		# Loop until reach the end of array1
-		bgt t0, t6, end_print_array1
+		bgt t0, t1, end_print_array1
 		
 		# Do the printing
 		li a7, 1
