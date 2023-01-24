@@ -38,10 +38,11 @@ _start:
 	# print the array before quick sort
 	jal print_array1
 	
+	# quicksort
 	la a0, array1
 	li a1, 0
 	li a2, 9
-	jal quick_sort
+	jal quicksort
 	
 	# print the array after quick sort
 	jal print_array1
@@ -51,9 +52,9 @@ _start:
 	ecall
 	
 # quicksort(a0 : A, a1 : low, a2 : high)
-quick_sort:
+quicksort:
 	# jump to the end if low >= high
-	bge a1, a2, end_quick_sort
+	bge a1, a2, end_quicksort
 	
 	# save ra for recursion
 	push ra
@@ -80,7 +81,7 @@ quick_sort:
 	push s0
 	
 	# quicksort(A, low, p - 1)
-	jal quick_sort
+	jal quicksort
 	
 	# retrieve p, A, high
 	pop s0
@@ -91,12 +92,12 @@ quick_sort:
 	addi a1, s0, 1
 	
 	# quicksort(A, p + 1, high)
-	jal quick_sort
+	jal quicksort
 	
 	jal print_array1
 	
 	pop ra	
-	end_quick_sort:
+	end_quicksort:
 		ret
 
 # partition(a0 : A, a1 : low, a2 : high)
