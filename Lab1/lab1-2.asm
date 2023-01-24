@@ -26,6 +26,9 @@ _start:
 	li a2, 9
 	jal swap
 	
+	# Print the array after the swap
+	jal print_array1
+	
 	# Do the partition
 	la a0, array1
 	li a1, 0
@@ -42,60 +45,66 @@ _start:
 # partition(a0 : A, a1 : low, a2 : high)
 partition:
 	push ra
+	
+	# s0 <- a0
+	mv s0, a0
+	
+	# s1 <- a1
+	mv s1, a1
+	
+	# s2 <- a2
+	mv s2, a2
 
-	# load the pivot into s0
-	lb s0, 36(a0)
+	# load the pivot into s3
+	slli s3, s2, 2
+	add s3, s3, s0
+	lw s3, (s3)
 	
-	# load the low pointer into s1
-	li s1, 0
+	# s4 <- i <- low - 1
+	addi s4, s1, -1
 	
-	# load the high pointer into s2
-	li s2, 9
-	
-	# load i into s3
-	li s3, -1
-	
-	# load j into s4
-	li s4, 0
-	
-	# i <- lo-1
-	li t0, 0
-	addi t0, t0, -1
+	# s5 <- j <- low
+	mv s5, s1
 	
 	partition_loop:
-		# get array[s4]
-		# store the address of array[a1] into t1
-		slli t0, s4, 2
-		add t0, t0, a0
-		lb t1, (t0)
+		# t3 <- A[j]
+		slli s6, s5, 2
+		add s6, s6, a0
+		lb s6, (s6)
 		
-		# jump to the end of the if statement if s4 > s0
-		bgt t1, s0, end_partition_if
+		# jump to the end of the if statement if A[j] > pivot
+		bgt s6, s3, end_partition_if
 		
 		# i <- i + 1
-		addi s3, s3, 1
+		addi s4, s4, 1
 		
 		# swap A[i] with A[j];
-		la a0, array1
-		mv a1, s3
-		mv a2, s4
+		mv a0, s0
+		mv a1, s4
+		mv a2, s5
 		jal swap
 		
 		end_partition_if:
-			# back to the start of the loop if s1 < s2 and increase s1
-			addi s4, s4, 1
-			blt s4, s2, partition_loop
+			#  increament j
+			addi s5, s5, 1
+			
+			# back to the start of the loop if j < high
+			blt s5, s2, partition_loop
 		
 	end_partition_loop:
-		# i + 1
-		addi s3, s3, 1
-		
-		# swap A[i+1] with A[hi]
-		la a0, array1
-		mv a1, s3
+		# i += 1
+		addi s4, s4, 1
+
+		# swap A[i+1] with A[high]
+		mv a0, s0
+		mv a1, s4
 		mv a2, s2
 		jal swap
+				
+		# save i into a0
+		mv a0, s4
 		
+		# return
 		pop ra
 		ret
 			
