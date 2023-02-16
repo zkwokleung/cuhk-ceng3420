@@ -17,7 +17,7 @@ benchmarks=${root}/../benchmarks
 asm=${root}/../asm
 report=${root}/report
 
-if [[ ! -e ${asm} ]]
+if [ ! -e ${asm} ]
 then
 	cd ${root}/..
 	make
@@ -36,7 +36,7 @@ do
 done
 
 grep '<' ${report} > /dev/null 2>&1
-if [[  $? == 1 ]]
+if [ $? == 1 ]
 then
 	echo -e "[INFO]: You have passed the Lab.\n"
 else
