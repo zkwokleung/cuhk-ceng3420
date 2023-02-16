@@ -305,9 +305,8 @@ int inst_to_binary(int line_no, char *opcode, char *arg1, char *arg2, char *arg3
         // TODO:
         binary = (0x19 << 2) + (0x03);
         binary += (reg_to_num(arg1, line_no) << 7);
-        struct_regs_indirect_addr* ret = parse_regs_indirect_addr(arg2, line_no);
+        struct_regs_indirect_addr *ret = parse_regs_indirect_addr(arg2, line_no);
         binary += (reg_to_num(ret->reg, line_no) << 15);
-        
     }
     else if (is_opcode(opcode) == JAL)
     {
@@ -318,9 +317,12 @@ int inst_to_binary(int line_no, char *opcode, char *arg1, char *arg2, char *arg3
          */
         // TODO:
         binary = (0x1b << 2) + (0x03);
-
-        warn("Lab2-1 assignment: JAL instruction\n");
-        exit(EXIT_FAILURE);
+        binary += (reg_to_num(arg1, line_no) << 7); // rd
+        int offset = handle_label_or_imm(line_no, arg2, label_table, number_of_labels);
+        binary += ((offset & 0x7F800));       // imm[19:12]
+        binary += ((offset & 0x400) << 9);    // imm[11]
+        binary += ((offset & 0x3FF) << 20);   // imm[10:1]
+        binary += ((offset & 0x80000) << 11); // imm[20]
     }
 
     // Conditional Branches
@@ -344,15 +346,30 @@ int inst_to_binary(int line_no, char *opcode, char *arg1, char *arg2, char *arg3
         /* Lab2-1 assignment */
         // TODO:
         binary = (0x01 << 12) + (0x18 << 2) + (0x03);
-
-        warn("Lab2-1 assignment: BNE instruction\n");
-        exit(EXIT_FAILURE);
+        binary = (0x18 << 2) + 0x03;
+        binary += (reg_to_num(arg1, line_no) << 15);
+        binary += (reg_to_num(arg2, line_no) << 20);
+        int offset;
+        offset = label_to_num(line_no, arg3, 12, label_table, number_of_labels);
+        binary += ((offset & 0x800) >> 4);   // imm[11]
+        binary += ((offset & 0x1E) << 7);    // imm[4:1]
+        binary += (0x01 << 12);              // funct3
+        binary += ((offset & 0x7E0) << 20);  // imm[10:5]
+        binary += ((offset & 0x1000) << 19); // imm[12]
     }
     else if (is_opcode(opcode) == BLT)
     {
         /* Lab2-1 assignment */
         // TODO:
-        binary = (0x04 << 12) + (0x18 << 2) + (0x03);
+        binary = (0x18 << 2) + 0x03;
+        binary += (reg_to_num(arg1, line_no) << 15);
+        binary += (reg_to_num(arg2, line_no) << 20);
+        int offset;
+        offset = label_to_num(line_no, arg3, 12, label_table, number_of_labels);
+        binary += ((offset & 0x800) >> 4);   // imm[11]
+        binary += ((offset & 0x1E) << 7);    // imm[4:1]
+        binary += ((offset & 0x7E0) << 20);  // imm[10:5]
+        binary += ((offset & 0x1000) << 19); // imm[12]
 
         warn("Lab2-1 assignment: BLT instruction\n");
         exit(EXIT_FAILURE);
@@ -363,8 +380,14 @@ int inst_to_binary(int line_no, char *opcode, char *arg1, char *arg2, char *arg3
         binary = (0x05 << 12) + (0x18 << 2) + (0x03);
 
         // TODO:
-        warn("Lab2-1 assignment: BGE instruction\n");
-        exit(EXIT_FAILURE);
+        binary += (reg_to_num(arg1, line_no) << 15);
+        binary += (reg_to_num(arg2, line_no) << 20);
+        int offset;
+        offset = label_to_num(line_no, arg3, 12, label_table, number_of_labels);
+        binary += ((offset & 0x800) >> 4);   // imm[11]
+        binary += ((offset & 0x1E) << 7);    // imm[4:1]
+        binary += ((offset & 0x7E0) << 20);  // imm[10:5]
+        binary += ((offset & 0x1000) << 19); // imm[12]
     }
 
     // Load and Store Instructions
@@ -401,16 +424,18 @@ int inst_to_binary(int line_no, char *opcode, char *arg1, char *arg2, char *arg3
         /* Lab2-1 assignment */
         // TODO:
         binary = (0x08 << 2) + (0x03);
-        binary += (reg_to_num(arg1, line_no) << 20); 
+        binary += (reg_to_num(arg1, line_no) << 20);
 
-        struct_regs_indirect_addr* ret = parse_regs_indirect_addr(arg2, line_no);
+        struct_regs_indirect_addr *ret = parse_regs_indirect_addr(arg2, line_no);
         binary += (reg_to_num(ret->reg, line_no) << 15);
 
+        binary += (reg_to_num(arg1, line_no) << 20);
+
         // imm[4:0]
-        binary += (ret->imm & 0x1F) << 7;
+        binary += ((ret->imm & 0x1F) << 7);
 
         // imm[11:5]
-        binary += (ret->imm & 0xFE0) << 25;
+        binary += ((ret->imm & 0xFFE0) << 25);
     }
     else if (is_opcode(opcode) == SH)
     {
@@ -418,14 +443,16 @@ int inst_to_binary(int line_no, char *opcode, char *arg1, char *arg2, char *arg3
         // TODO:
         binary = (0x01 << 12) + (0x08 << 2) + (0x03);
 
-        struct_regs_indirect_addr* ret = parse_regs_indirect_addr(arg2, line_no);
+        struct_regs_indirect_addr *ret = parse_regs_indirect_addr(arg2, line_no);
         binary += (reg_to_num(ret->reg, line_no) << 15);
+
+        binary += (reg_to_num(arg1, line_no) << 20);
 
         // imm[4:0]
         binary += (ret->imm & 0x1F) << 7;
 
         // imm[11:5]
-        binary += (ret->imm & 0xFE0) << 25;
+        binary += (ret->imm & 0xFFE0) << 25;
     }
     else if (is_opcode(opcode) == SW)
     {
@@ -433,14 +460,16 @@ int inst_to_binary(int line_no, char *opcode, char *arg1, char *arg2, char *arg3
         // TODO:
         binary = (0x02 << 12) + (0x08 << 2) + (0x03);
 
-        struct_regs_indirect_addr* ret = parse_regs_indirect_addr(arg2, line_no);
+        struct_regs_indirect_addr *ret = parse_regs_indirect_addr(arg2, line_no);
         binary += (reg_to_num(ret->reg, line_no) << 15);
+
+        binary += (reg_to_num(arg1, line_no) << 20);
 
         // imm[4:0]
         binary += (ret->imm & 0x1F) << 7;
 
         // imm[11:5]
-        binary += (ret->imm & 0xFE0) << 25;
+        binary += (ret->imm & 0xFFE0) << 25;
     }
     return binary;
 }
@@ -810,38 +839,38 @@ void handle_err(int err_no, int line_no)
     switch (err_no)
     {
     case 1:
-        error("<error no: 1> undefeind label in the line %d.\n", line_no + 1);
+        error("<error no: 1> undefeind label in the line %d.\n", line_no);
         exit(1);
     case 2:
-        error("<error no: 2> invalid opcode in the line %d.\n", line_no + 1);
+        error("<error no: 2> invalid opcode in the line %d.\n", line_no);
         exit(2);
     case 3:
-        error("<error no: 3> invalid constant in the line %d.\n", line_no + 1);
+        error("<error no: 3> invalid constant in the line %d.\n", line_no);
         exit(3);
     case 4:
-        error("<error no: 4> invalid register operand in the line %d.\n", line_no + 1);
+        error("<error no: 4> invalid register operand in the line %d.\n", line_no);
         exit(4);
     case 5:
-        error("<error no: 5> wrong number of operands in the line %d.\n", line_no + 1);
+        error("<error no: 5> wrong number of operands in the line %d.\n", line_no);
         exit(5);
     case 6:
-        error("<error no: 6> unexpected error occurs in the line %d.\n", line_no + 1);
+        error("<error no: 6> unexpected error occurs in the line %d.\n", line_no);
         exit(6);
     case 7:
-        error("<error no: 7> unexpected operand in the line %d.\n", line_no + 1);
+        error("<error no: 7> unexpected operand in the line %d.\n", line_no);
         exit(7);
     case 8:
-        error("<error no: 8> the address of the label in the line %d cannot be fetched.\n", line_no + 1);
+        error("<error no: 8> the address of the label in the line %d cannot be fetched.\n", line_no);
         exit(8);
     case 9:
-        error("<error no: 9> the memory address in the line %d is invalid to load the program.\n", line_no + 1);
+        error("<error no: 9> the memory address in the line %d is invalid to load the program.\n", line_no);
         exit(9);
     case 10:
-        error("<error no: 10> the label name in line %d is invalid.\n", line_no + 1);
+        error("<error no: 10> the label name in line %d is invalid.\n", line_no);
         exit(10);
     /* reserved for other Error Code */
     case 11:
-        error("<error no: 11> malloc is failed in the line %d.\n", line_no + 1);
+        error("<error no: 11> malloc is failed in the line %d.\n", line_no);
         exit(11);
     default:
         printf("<error no: 12> unexpected error cannot be handled.\n");
