@@ -160,7 +160,9 @@ int inst_to_binary(int line_no, char *opcode, char *arg1, char *arg2, char *arg3
     if (is_opcode(opcode) == ADDI)
     {
         binary = (0x04 << 2) + 0x03;
+        // 11:7 rd
         binary += (reg_to_num(arg1, line_no) << 7);
+        // 19:15 rs1
         binary += (reg_to_num(arg2, line_no) << 15);
         binary += (MASK11_0(validate_imm(arg3, 12, line_no)) << 20);
     }
@@ -168,7 +170,9 @@ int inst_to_binary(int line_no, char *opcode, char *arg1, char *arg2, char *arg3
     {
         /* Lab2-1 assignment */
         binary = (0x01 << 12) + (0x04 << 2) + 0x03;
+        // 11:7 rd
         binary += (reg_to_num(arg1, line_no) << 7);
+        // 19:15 rs1
         binary += (reg_to_num(arg2, line_no) << 15);
         binary += (MASK11_0(validate_imm(arg3, 5, line_no)) << 20);
     }
@@ -176,7 +180,9 @@ int inst_to_binary(int line_no, char *opcode, char *arg1, char *arg2, char *arg3
     {
         /* Lab2-1 assignment */
         binary = (0x04 << 12) + (0x04 << 2) + 0x03;
+        // 11:7 rd
         binary += (reg_to_num(arg1, line_no) << 7);
+        // 19:15 rs1
         binary += (reg_to_num(arg2, line_no) << 15);
         binary += (MASK11_0(validate_imm(arg3, 12, line_no)) << 20);
     }
@@ -186,11 +192,13 @@ int inst_to_binary(int line_no, char *opcode, char *arg1, char *arg2, char *arg3
          * Lab2-1 assignment
          * tip: you may need the function `lower5bit`
          */
-        // ? Not sure, need to double check the immediate part
         binary = (0x05 << 12) + (0x04 << 2) + 0x03;
+        // 11:7 rd
         binary += (reg_to_num(arg1, line_no) << 7);
+        // 19:15 rs1
         binary += (reg_to_num(arg2, line_no) << 15);
-        binary += (MASK11_0(validate_imm(arg3, 5, line_no)) << 20);
+        // 24:20 shamt
+        binary += (lower5bit(arg3, line_no) << 20);
     }
     else if (is_opcode(opcode) == SRAI)
     {
@@ -198,29 +206,35 @@ int inst_to_binary(int line_no, char *opcode, char *arg1, char *arg2, char *arg3
          * Lab2-1 assignment
          * tip: you may need the function `lower5bit`
          */
-        // ? Not sure, need to double check the immediate part
         binary = (0x10 << 26) + (0x05 << 12) + (0x04 << 2) + 0x03;
+        // 11:7 rd
         binary += (reg_to_num(arg1, line_no) << 7);
+        // 19:15 rs1
         binary += (reg_to_num(arg2, line_no) << 15);
-        binary += (MASK11_0(validate_imm(arg3, 5, line_no)) << 20);
+        // 24:20 shamt
+        binary += (lower5bit(arg3, line_no) << 20);
     }
     else if (is_opcode(opcode) == ORI)
     {
         /* Lab2-1 assignment */
-        // ? Not sure, need to double check the immediate part
         binary = (0x06 << 12) + (0x04 << 2) + 0x03;
+        // 11:7 rd
         binary += (reg_to_num(arg1, line_no) << 7);
+        // 19:15 rs1
         binary += (reg_to_num(arg2, line_no) << 15);
-        binary += (MASK11_0(validate_imm(arg3, 12, line_no)) << 20);
+        // 31:20 imm[11:0]
+        binary += (validate_imm(arg3, 12, line_no) << 20);
     }
     else if (is_opcode(opcode) == ANDI)
     {
         /* Lab2-1 assignment */
-        // ? Not sure, need to double check the immediate part
         binary = (0x07 << 12) + (0x04 << 2) + 0x03;
+        // 11:7 rd
         binary += (reg_to_num(arg1, line_no) << 7);
+        // 19:15 rs1
         binary += (reg_to_num(arg2, line_no) << 15);
-        binary += (MASK11_0(validate_imm(arg3, 12, line_no)) << 20);
+        // 31:20 imm[11:0]
+        binary += (validate_imm(arg3, 12, line_no) << 20);
     }
     else if (is_opcode(opcode) == LUI)
     {
@@ -302,7 +316,6 @@ int inst_to_binary(int line_no, char *opcode, char *arg1, char *arg2, char *arg3
          * tip: you may need the function `parse_regs_indirect_addr`
          * e.g., parse_regs_indirect_addr(arg2, line_no)
          */
-        // TODO:
         binary = (0x19 << 2) + (0x03);
         // 11:7 rd
         binary += (reg_to_num(arg1, line_no) << 7);
@@ -311,7 +324,7 @@ int inst_to_binary(int line_no, char *opcode, char *arg1, char *arg2, char *arg3
         // 19:15 rs1
         binary += (reg_to_num(ret->reg, line_no) << 15);
         // 31:20 imm[11:0]
-        binary += ((ret->imm & 0x1FFF) << 20);
+        binary += (MASK11_0(ret->imm) << 20);
     }
     else if (is_opcode(opcode) == JAL)
     {
@@ -320,11 +333,11 @@ int inst_to_binary(int line_no, char *opcode, char *arg1, char *arg2, char *arg3
          * tip: you may need the function `handle_label_or_imm`
          * e.g., handle_label_or_imm(arg2, label_table, cmd_no, line_no)
          */
-        // TODO:
         binary = (0x1b << 2) + (0x03);
-        // 7:11 rd
+        // 11:7 rd
         binary += (reg_to_num(arg1, line_no) << 7);
         int val = handle_label_or_imm(line_no, arg2, label_table, number_of_labels);
+        printf("Return value for handle_label_or_imm() for arg2 in line %d = %#08x\n", line_no, val);
         // 19:12 imm[19:12]
         binary += ((val & 0xFF000));
         // 20 imm[11]
