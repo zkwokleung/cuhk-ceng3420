@@ -336,16 +336,15 @@ int inst_to_binary(int line_no, char *opcode, char *arg1, char *arg2, char *arg3
         binary = (0x1b << 2) + (0x03);
         // 11:7 rd
         binary += (reg_to_num(arg1, line_no) << 7);
-        int val = handle_label_or_imm(line_no, arg2, label_table, number_of_labels);
-        printf("Return value for handle_label_or_imm() for arg2 in line %d = %#08x\n", line_no, val);
+        int val = handle_label_or_imm(line_no, arg2, label_table, number_of_labels), offset = val - addr;
         // 19:12 imm[19:12]
-        binary += ((val & 0xFF000));
+        binary += ((offset & 0xFF000));
         // 20 imm[11]
-        binary += ((val & 0x800) << 9);
+        binary += ((offset & 0x800) << 9);
         //  30:21 imm[10:1]
-        binary += ((val & 0x7FE) << 20);
+        binary += ((offset & 0x7FE) << 20);
         // 31 imm[20]
-        binary += ((val & 0x100000) << 11);
+        binary += ((offset & 0x100000) << 11);
     }
 
     // Conditional Branches
