@@ -377,7 +377,7 @@ void handle_sra(unsigned int cur_inst)
      * Lab2-2 assignment
      */
     unsigned int rd = MASK11_7(cur_inst), rs1 = MASK19_15(cur_inst), rs2 = MASK24_20(cur_inst);
-    NEXT_LATCHES.REGS[rd] = ((signed int) CURRENT_LATCHES.REGS[rs1]) >> CURRENT_LATCHES.REGS[rs2];
+    NEXT_LATCHES.REGS[rd] = ((signed int)CURRENT_LATCHES.REGS[rs1]) >> CURRENT_LATCHES.REGS[rs2];
 }
 
 void handle_or(unsigned int cur_inst)
@@ -405,8 +405,7 @@ void handle_jalr(unsigned int cur_inst)
      */
     unsigned int rd = MASK11_7(cur_inst), rs1 = MASK19_15(cur_inst);
     int imm12 = sext(MASK31_20(cur_inst), 12);
-    NEXT_LATCHES.PC = sext(imm12, 12) + NEXT_LATCHES.PC;
-    NEXT_LATCHES.REGS[rd] = CURRENT_LATCHES.PC + NEXT_LATCHES.PC;
+    NEXT_LATCHES.PC = sext(imm12, 12) + CURRENT_LATCHES.PC;
 }
 
 void handle_jal(unsigned int cur_inst)
@@ -415,23 +414,18 @@ void handle_jal(unsigned int cur_inst)
      * Lab2-2 assignment
      */
     unsigned int rd = MASK11_7(cur_inst), rs1 = MASK19_15(cur_inst);
-    int imm20 = (MASK31(cur_inst) << 20) +
-                (MASK19_12(cur_inst) << 12) +
-                (MASK20(cur_inst) << 11) +
-                (MASK30_21(cur_inst) << 1);
-    NEXT_LATCHES.PC = sext(imm20, 12) + NEXT_LATCHES.PC;
-    NEXT_LATCHES.REGS[rd] = CURRENT_LATCHES.PC + NEXT_LATCHES.PC;
+    int imm20 =
+        (MASK31(cur_inst) << 20) + (MASK19_12(cur_inst) << 12) + (MASK20(cur_inst) << 11) + (MASK30_21(cur_inst) << 1);
+    NEXT_LATCHES.PC = sext(imm20, 12) + CURRENT_LATCHES.PC;
 }
 
 void handle_beq(unsigned int cur_inst)
 {
     unsigned int rs1 = MASK19_15(cur_inst), rs2 = MASK24_20(cur_inst);
-    int imm12 = (MASK31(cur_inst) << 12) + 
-                (MASK7(cur_inst) << 11) + 
-                (MASK30_25(cur_inst) << 5) + 
-                (MASK11_8(cur_inst) << 1);
+    int imm12 =
+        (MASK31(cur_inst) << 12) + (MASK7(cur_inst) << 11) + (MASK30_25(cur_inst) << 5) + (MASK11_8(cur_inst) << 1);
     if (CURRENT_LATCHES.REGS[rs1] == CURRENT_LATCHES.REGS[rs2])
-        NEXT_LATCHES.PC = sext(imm12, 12) + NEXT_LATCHES.PC;
+        NEXT_LATCHES.PC = sext(imm12, 12) + CURRENT_LATCHES.PC;
 }
 
 void handle_bne(unsigned int cur_inst)
@@ -443,7 +437,7 @@ void handle_bne(unsigned int cur_inst)
     int imm12 =
         (MASK31(cur_inst) << 12) + (MASK7(cur_inst) << 11) + (MASK30_25(cur_inst) << 5) + (MASK11_8(cur_inst) << 1);
     if (CURRENT_LATCHES.REGS[rs1] != CURRENT_LATCHES.REGS[rs2])
-        NEXT_LATCHES.PC = sext(imm12, 12) + NEXT_LATCHES.PC;
+        NEXT_LATCHES.PC = sext(imm12, 12) + CURRENT_LATCHES.PC;
 }
 
 void handle_blt(unsigned int cur_inst)
@@ -452,12 +446,10 @@ void handle_blt(unsigned int cur_inst)
      * Lab2-2 assignment
      */
     unsigned int rs1 = MASK19_15(cur_inst), rs2 = MASK24_20(cur_inst);
-    int imm12 = (MASK31(cur_inst) << 12) + 
-                (MASK7(cur_inst) << 11) + 
-                (MASK30_25(cur_inst) << 5) + 
-                (MASK11_8(cur_inst) << 1);
+    int imm12 =
+        (MASK31(cur_inst) << 12) + (MASK7(cur_inst) << 11) + (MASK30_25(cur_inst) << 5) + (MASK11_8(cur_inst) << 1);
     if (CURRENT_LATCHES.REGS[rs1] < CURRENT_LATCHES.REGS[rs2])
-        NEXT_LATCHES.PC = sext(imm12, 12) + NEXT_LATCHES.PC;
+        NEXT_LATCHES.PC = sext(imm12, 12) + CURRENT_LATCHES.PC;
 }
 
 void handle_bge(unsigned int cur_inst)
@@ -469,7 +461,7 @@ void handle_bge(unsigned int cur_inst)
     int imm12 =
         (MASK31(cur_inst) << 12) + (MASK7(cur_inst) << 11) + (MASK30_25(cur_inst) << 5) + (MASK11_8(cur_inst) << 1);
     if (CURRENT_LATCHES.REGS[rs1] >= CURRENT_LATCHES.REGS[rs2])
-        NEXT_LATCHES.PC = sext(imm12, 12) + NEXT_LATCHES.PC;
+        NEXT_LATCHES.PC = sext(imm12, 12) + CURRENT_LATCHES.PC;
 }
 
 void handle_lb(unsigned int cur_inst)
@@ -498,6 +490,8 @@ void handle_lw(unsigned int cur_inst)
     unsigned int rd = MASK11_7(cur_inst), rs1 = MASK19_15(cur_inst);
     int imm12 = MASK31_20(cur_inst);
     NEXT_LATCHES.REGS[rd] = sext(MASK7_0(MEMORY[sext(imm12, 12) + CURRENT_LATCHES.REGS[rs1]]), 8);
+    NEXT_LATCHES.REGS[rd + 1] = sext(MASK7_0(MEMORY[sext(imm12, 12) + CURRENT_LATCHES.REGS[rs1] + 4]), 8);
+    NEXT_LATCHES.REGS[rd + 2] = sext(MASK7_0(MEMORY[sext(imm12, 12) + CURRENT_LATCHES.REGS[rs1] + 8]), 8);
 }
 
 void handle_sb(unsigned int cur_inst)
@@ -505,9 +499,9 @@ void handle_sb(unsigned int cur_inst)
     /*
      * Lab2-2 assignment
      */
-    unsigned int rd = MASK11_7(cur_inst), rs1 = MASK19_15(cur_inst), rs2 = MASK24_20(cur_inst);
-    int imm12 = MASK31_25(cur_inst) << 5 + MASK11_7(cur_inst);
-    NEXT_LATCHES.REGS[rd] = sext(MASK7_0(MEMORY[sext(imm12, 12) + CURRENT_LATCHES.REGS[rs1]]), 8);
+    unsigned int rs1 = MASK19_15(cur_inst), rs2 = MASK24_20(cur_inst);
+    int imm12 = MASK31_25(cur_inst) + MASK11_7(cur_inst);
+    MEMORY[imm12 + CURRENT_LATCHES.REGS[rs1]] = NEXT_LATCHES.REGS[rs2];
 }
 
 void handle_sh(unsigned int cur_inst)
@@ -515,9 +509,10 @@ void handle_sh(unsigned int cur_inst)
     /*
      * Lab2-2 assignment
      */
-    unsigned int rd = MASK11_7(cur_inst), rs1 = MASK19_15(cur_inst), rs2 = MASK24_20(cur_inst);
-    int imm12 = MASK31_25(cur_inst) << 5 + MASK11_7(cur_inst);
-    NEXT_LATCHES.REGS[rd] = sext(MASK7_0(MEMORY[sext(imm12, 12) + CURRENT_LATCHES.REGS[rs1]]), 8);
+    unsigned int rs1 = MASK19_15(cur_inst), rs2 = MASK24_20(cur_inst);
+    int imm12 = (MASK31_25(cur_inst) << 5) + MASK11_7(cur_inst);
+    MEMORY[imm12 + CURRENT_LATCHES.REGS[rs1]] = NEXT_LATCHES.REGS[rs2];
+    MEMORY[imm12 + CURRENT_LATCHES.REGS[rs1] + 1] = NEXT_LATCHES.REGS[rs2];
 }
 
 void handle_sw(unsigned int cur_inst)
@@ -525,9 +520,12 @@ void handle_sw(unsigned int cur_inst)
     /*
      * Lab2-2 assignment
      */
-    unsigned int rd = MASK11_7(cur_inst), rs1 = MASK19_15(cur_inst), rs2 = MASK24_20(cur_inst);
-    int imm12 = MASK31_25(cur_inst) << 5 + MASK11_7(cur_inst);
-    NEXT_LATCHES.REGS[rd] = sext(MASK7_0(MEMORY[sext(imm12, 12) + CURRENT_LATCHES.REGS[rs1]]), 8);
+    unsigned int rs1 = MASK19_15(cur_inst), rs2 = MASK24_20(cur_inst);
+    int imm12 = (MASK31_25(cur_inst) << 5) + MASK11_7(cur_inst);
+    MEMORY[imm12 + CURRENT_LATCHES.REGS[rs1]] = NEXT_LATCHES.REGS[rs2];
+    MEMORY[imm12 + CURRENT_LATCHES.REGS[rs1] + 1] = NEXT_LATCHES.REGS[rs2];
+    MEMORY[imm12 + CURRENT_LATCHES.REGS[rs1] + 2] = NEXT_LATCHES.REGS[rs2];
+    MEMORY[imm12 + CURRENT_LATCHES.REGS[rs1] + 3] = NEXT_LATCHES.REGS[rs2];
 }
 
 void handle_halt(unsigned int cur_inst)
@@ -604,100 +602,103 @@ void handle_instruction()
         /*
          * Integer Register-Register Operations
          */
-        switch(funct3)
+        switch (funct3)
         {
-            case 0:
+        case 0:
             if (MASK31_25(cur_inst) == 0)
                 handle_add(cur_inst);
             else
                 handle_sub(cur_inst);
             break;
 
-            case 1:
-                handle_sll(cur_inst);
-                break;
+        case 1:
+            handle_sll(cur_inst);
+            break;
 
-            case 4:
-                handle_xor(cur_inst);
-                break;
+        case 4:
+            handle_xor(cur_inst);
+            break;
 
-            case 5:
-                if (MASK31_25(cur_inst) == 0)
-                    handle_srl(cur_inst);
-                else
-                    handle_sra(cur_inst);
-                break;
+        case 5:
+            if (MASK31_25(cur_inst) == 0)
+                handle_srl(cur_inst);
+            else
+                handle_sra(cur_inst);
+            break;
 
-            case 6:
-                handle_or(cur_inst);
-                break;
+        case 6:
+            handle_or(cur_inst);
+            break;
 
-            case 7:
-                handle_and(cur_inst);
-                break;
+        case 7:
+            handle_and(cur_inst);
+            break;
         }
         break;
 
     case (0x03):
         /*
-        * Load Instructions
-        */
+         * Load Instructions
+         */
         switch (funct3)
         {
-            case 0:
-                handle_lb(cur_inst);
-                break;
+        case 0:
+            handle_lb(cur_inst);
+            break;
 
-            case 1:
-                handle_lh(cur_inst);
-                break;
+        case 1:
+            handle_lh(cur_inst);
+            break;
 
-            case 2:
-                handle_lw(cur_inst);
-                break;
+        case 2:
+            handle_lw(cur_inst);
+            break;
         }
         break;
 
     case (0x08 << 2) + 0x03:
         /*
-        * Store Instructions
-        */
+         * Store Instructions
+         */
         switch (funct3)
         {
-            case 0:
-                handle_sb(cur_inst);
-                break;
+        case 0:
+            handle_sb(cur_inst);
+            break;
 
-            case 1:
-                handle_sh(cur_inst);
-                break;
+        case 1:
+            handle_sh(cur_inst);
+            break;
 
-            case 2:
-                handle_sw(cur_inst);
-                break;
+        case 2:
+            handle_sw(cur_inst);
+            break;
         }
         break;
 
     case (0x18 << 2) + 0x03:
+        /*
+         * Branch Instructions
+         */
         switch (funct3)
         {
-            case 0:
-                handle_beq(cur_inst);
-                break;
+        case 0:
+            handle_beq(cur_inst);
+            break;
 
-            case 1:
-                handle_bne(cur_inst);
-                break;
+        case 1:
+            handle_bne(cur_inst);
+            break;
 
-            case 4:
-                handle_blt(cur_inst);
-                break;
+        case 4:
+            handle_blt(cur_inst);
+            break;
 
-            case 5:
-                handle_bge(cur_inst);
-                break;
+        case 5:
+            handle_bge(cur_inst);
+            break;
         }
-        break; 
+        break;
 
     case (0x0D << 2) + 0x03:
         handle_lui(cur_inst);
