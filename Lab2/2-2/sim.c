@@ -46,6 +46,7 @@ void load_program(char *program_filename)
         /* make sure the program fit the memory */
         if (program_base + i >= BYTES_IN_MEM)
         {
+            // info("program base: %d, program size: %d\n", program_base, i);
             error("program file %s is too long to fit in memory at the address: %x\n", program_filename, i);
         }
 
@@ -263,6 +264,9 @@ void handle_slli(unsigned int cur_inst)
     /*
      * Lab2-2 assignment
      */
+    unsigned int rd = MASK11_7(cur_inst), rs1 = MASK19_15(cur_inst);
+    int imm12 = sext(MASK31_20(cur_inst), 12);
+    NEXT_LATCHES.REGS[rd] = CURRENT_LATCHES.REGS[rs1] << imm12;
 }
 
 void handle_xori(unsigned int cur_inst)
@@ -270,6 +274,9 @@ void handle_xori(unsigned int cur_inst)
     /*
      * Lab2-2 assignment
      */
+    unsigned int rd = MASK11_7(cur_inst), rs1 = MASK19_15(cur_inst);
+    int imm12 = sext(MASK31_20(cur_inst), 12);
+    NEXT_LATCHES.REGS[rd] = CURRENT_LATCHES.REGS[rs1] ^ imm12;
 }
 
 void handle_srli(unsigned int cur_inst)
@@ -277,6 +284,9 @@ void handle_srli(unsigned int cur_inst)
     /*
      * Lab2-2 assignment
      */
+    unsigned int rd = MASK11_7(cur_inst), rs1 = MASK19_15(cur_inst);
+    int imm12 = sext(MASK31_20(cur_inst), 12);
+    NEXT_LATCHES.REGS[rd] = CURRENT_LATCHES.REGS[rs1] >> imm12;
 }
 
 void handle_srai(unsigned int cur_inst)
@@ -318,6 +328,8 @@ void handle_sub(unsigned int cur_inst)
     /*
      * Lab2-2 assignment
      */
+    unsigned int rd = MASK11_7(cur_inst), rs1 = MASK19_15(cur_inst), rs2 = MASK24_20(cur_inst);
+    NEXT_LATCHES.REGS[rd] = CURRENT_LATCHES.REGS[rs1] - CURRENT_LATCHES.REGS[rs2];
 }
 
 void handle_sll(unsigned int cur_inst)
@@ -418,6 +430,9 @@ void handle_lh(unsigned int cur_inst)
     /*
      * Lab2-2 assignment
      */
+    unsigned int rd = MASK11_7(cur_inst), rs1 = MASK19_15(cur_inst);
+    int imm12 = MASK31_20(cur_inst);
+    NEXT_LATCHES.REGS[rd] = sext(MASK7_0(MEMORY[sext(imm12, 12) + CURRENT_LATCHES.REGS[rs1]]), 8);
 }
 
 void handle_lw(unsigned int cur_inst)
@@ -425,6 +440,9 @@ void handle_lw(unsigned int cur_inst)
     /*
      * Lab2-2 assignment
      */
+    unsigned int rd = MASK11_7(cur_inst), rs1 = MASK19_15(cur_inst);
+    int imm12 = MASK31_20(cur_inst);
+    NEXT_LATCHES.REGS[rd] = sext(MASK7_0(MEMORY[sext(imm12, 12) + CURRENT_LATCHES.REGS[rs1]]), 8);
 }
 
 void handle_sb(unsigned int cur_inst)
@@ -432,6 +450,9 @@ void handle_sb(unsigned int cur_inst)
     /*
      * Lab2-2 assignment
      */
+    unsigned int rd = MASK11_7(cur_inst), rs1 = MASK19_15(cur_inst), rs2 = MASK24_20(cur_inst);
+    int imm7 = MASK31_25(cur_inst);
+    NEXT_LATCHES.REGS[rd] = sext(MASK7_0(MEMORY[sext(imm7, 12) + CURRENT_LATCHES.REGS[rs1]]), 8);
 }
 
 void handle_sh(unsigned int cur_inst)
@@ -518,6 +539,92 @@ void handle_instruction()
     /*
      * Lab2-2 assignment: Decode other types of RV32I instructions
      */
+    case (0x0C << 2) + 0x03:
+        /*
+         * Integer Register-Register Operations
+         */
+        switch(funct3)
+        {
+            case 0:
+            if (MASK31_25(cur_inst) == 0)
+                handle_add(cur_inst);
+            else
+                handle_sub(cur_inst);
+            break;
+
+            case 1:
+                handle_sll(cur_inst);
+                break;
+
+            case 2:
+                handle_slt(cur_inst);
+                break;
+
+            case 3:
+                handle_sltu(cur_inst);
+                break;
+
+            case 4:
+                handle_xor(cur_inst);
+                break;
+
+            case 5:
+                if (MASK31_25(cur_inst) == 0)
+                    handle_srl(cur_inst);
+                else
+                    handle_sra(cur_inst);
+                break;
+
+            case 6:
+                handle_or(cur_inst);
+                break;
+
+            case 7:
+                handle_and(cur_inst);
+                break;
+        }
+        break;
+
+    case (0x03):
+        /*
+        * Load Instructions
+        */
+        switch (funct3)
+        {
+            case 0:
+                handle_lb(cur_inst);
+                break;
+
+            case 1:
+                handle_lh(cur_inst);
+                break;
+
+            case 2:
+                handle_lw(cur_inst);
+                break;
+        }
+        break;
+
+    case (0x08 << 2) + 0x03:
+        /*
+        * Store Instructions
+        */
+        switch (funct3)
+        {
+            case 0:
+                handle_sb(cur_inst);
+                break;
+
+            case 1:
+                handle_sh(cur_inst);
+                break;
+
+            case 2:
+                handle_sw(cur_inst);
+                break;
+        }
+        break;
+
     default:
         error("unknown instruction 0x%08x is captured.\n", cur_inst);
     }
