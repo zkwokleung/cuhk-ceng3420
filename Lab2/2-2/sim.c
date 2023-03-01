@@ -450,9 +450,7 @@ void handle_sb(unsigned int cur_inst)
     /*
      * Lab2-2 assignment
      */
-    unsigned int rd = MASK11_7(cur_inst), rs1 = MASK19_15(cur_inst), rs2 = MASK24_20(cur_inst);
-    int imm7 = MASK31_25(cur_inst);
-    NEXT_LATCHES.REGS[rd] = sext(MASK7_0(MEMORY[sext(imm7, 12) + CURRENT_LATCHES.REGS[rs1]]), 8);
+
 }
 
 void handle_sh(unsigned int cur_inst)
@@ -460,6 +458,9 @@ void handle_sh(unsigned int cur_inst)
     /*
      * Lab2-2 assignment
      */
+    unsigned int rd = MASK11_7(cur_inst), rs1 = MASK19_15(cur_inst);
+    int imm12 = MASK31_20(cur_inst);
+    NEXT_LATCHES.REGS[rd] = sext(MASK7_0(MEMORY[sext(imm12, 12) + CURRENT_LATCHES.REGS[rs1]]), 8);
 }
 
 void handle_sw(unsigned int cur_inst)
@@ -556,14 +557,6 @@ void handle_instruction()
                 handle_sll(cur_inst);
                 break;
 
-            case 2:
-                handle_slt(cur_inst);
-                break;
-
-            case 3:
-                handle_sltu(cur_inst);
-                break;
-
             case 4:
                 handle_xor(cur_inst);
                 break;
@@ -624,6 +617,27 @@ void handle_instruction()
                 break;
         }
         break;
+
+    case (0x18 << 2) + 0x03:
+        switch (funct3)
+        {
+            case 0:
+                handle_beq(cur_inst);
+                break;
+
+            case 1:
+                handle_bne(cur_inst);
+                break;
+
+            case 4:
+                handle_blt(cur_inst);
+                break;
+
+            case 5:
+                handle_bge(cur_inst);
+                break;
+        }
+        break; 
 
     default:
         error("unknown instruction 0x%08x is captured.\n", cur_inst);
