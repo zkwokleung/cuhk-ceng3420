@@ -79,7 +79,7 @@ int lower5bit(char *imm, int line_no)
         handle_err(7, line_no);
     else
         val = ((int)strtol(imm, NULL, (ret == HEX) ? 16 : 10) & 0x1F);
-    if (is_imm_in_range(val, 6))
+    if (is_imm_in_range(val, 5))
         return val;
     else
         handle_err(5, line_no);
@@ -160,9 +160,7 @@ int inst_to_binary(int line_no, char *opcode, char *arg1, char *arg2, char *arg3
     if (is_opcode(opcode) == ADDI)
     {
         binary = (0x04 << 2) + 0x03;
-        // 11:7 rd
         binary += (reg_to_num(arg1, line_no) << 7);
-        // 19:15 rs1
         binary += (reg_to_num(arg2, line_no) << 15);
         binary += (MASK11_0(validate_imm(arg3, 12, line_no)) << 20);
     }
@@ -250,6 +248,7 @@ int inst_to_binary(int line_no, char *opcode, char *arg1, char *arg2, char *arg3
         binary += (reg_to_num(arg1, line_no) << 7);
         binary += (reg_to_num(arg2, line_no) << 15);
         binary += (reg_to_num(arg3, line_no) << 20);
+        binary += (0x0 << 25);
     }
     else if (is_opcode(opcode) == SUB)
     {
@@ -419,7 +418,7 @@ int inst_to_binary(int line_no, char *opcode, char *arg1, char *arg2, char *arg3
         binary += (reg_to_num(arg1, line_no) << 7);
         struct_regs_indirect_addr *ret = parse_regs_indirect_addr(arg2, line_no);
         binary += (reg_to_num(ret->reg, line_no) << 15);
-        binary += (ret->imm << 20);
+        binary += (MASK11_0(ret->imm) << 20);
     }
     else if (is_opcode(opcode) == LH)
     {
@@ -570,16 +569,19 @@ int is_imm(char *ptr)
     bool hex = false;
     if (l > 3 && ptr[0] == '-' && ptr[1] == '0' && (tolower(ptr[2]) == 'x'))
     {
+        // negative hexadecimal
         i += 3;
         hex = true;
     }
     else if (l > 2 && ptr[0] == '0' && (tolower(ptr[1]) == 'x'))
     {
+        // positive hexadecimal
         i += 2;
         hex = true;
     }
     else if (l > 1 && ptr[0] == '-')
     {
+        // negative number
         i += 1;
     }
     while (i < l && isxdigit(ptr[i]))
@@ -858,38 +860,38 @@ void handle_err(int err_no, int line_no)
     switch (err_no)
     {
     case 1:
-        error("<error no: 1> undefeind label in the line %d.\n", line_no);
+        error("<error no: 1> undefeind label in the line %d.\n", line_no + 1);
         exit(1);
     case 2:
-        error("<error no: 2> invalid opcode in the line %d.\n", line_no);
+        error("<error no: 2> invalid opcode in the line %d.\n", line_no + 1);
         exit(2);
     case 3:
-        error("<error no: 3> invalid constant in the line %d.\n", line_no);
+        error("<error no: 3> invalid constant in the line %d.\n", line_no + 1);
         exit(3);
     case 4:
-        error("<error no: 4> invalid register operand in the line %d.\n", line_no);
+        error("<error no: 4> invalid register operand in the line %d.\n", line_no + 1);
         exit(4);
     case 5:
-        error("<error no: 5> wrong number of operands in the line %d.\n", line_no);
+        error("<error no: 5> wrong number of operands in the line %d.\n", line_no + 1);
         exit(5);
     case 6:
-        error("<error no: 6> unexpected error occurs in the line %d.\n", line_no);
+        error("<error no: 6> unexpected error occurs in the line %d.\n", line_no + 1);
         exit(6);
     case 7:
-        error("<error no: 7> unexpected operand in the line %d.\n", line_no);
+        error("<error no: 7> unexpected operand in the line %d.\n", line_no + 1);
         exit(7);
     case 8:
-        error("<error no: 8> the address of the label in the line %d cannot be fetched.\n", line_no);
+        error("<error no: 8> the address of the label in the line %d cannot be fetched.\n", line_no + 1);
         exit(8);
     case 9:
-        error("<error no: 9> the memory address in the line %d is invalid to load the program.\n", line_no);
+        error("<error no: 9> the memory address in the line %d is invalid to load the program.\n", line_no + 1);
         exit(9);
     case 10:
-        error("<error no: 10> the label name in line %d is invalid.\n", line_no);
+        error("<error no: 10> the label name in line %d is invalid.\n", line_no + 1);
         exit(10);
     /* reserved for other Error Code */
     case 11:
-        error("<error no: 11> malloc is failed in the line %d.\n", line_no);
+        error("<error no: 11> malloc is failed in the line %d.\n", line_no + 1);
         exit(11);
     default:
         printf("<error no: 12> unexpected error cannot be handled.\n");
@@ -962,6 +964,11 @@ void assemble(char *input_file_name, char *output_file_name)
             number_of_labels++;
             addr += 0x4;
         }
+        if (is_opcode(opcode) == LA)
+        {
+            // `la` pseudo instruciton
+            addr += 0x4;
+        }
     }
 
 #ifdef DEBUG
@@ -1005,6 +1012,11 @@ void assemble(char *input_file_name, char *output_file_name)
         {
             fprintf(output_file, "0x%08x\n",
                     inst_to_binary(line_no, opcode, arg1, arg2, arg3, label_table, number_of_labels, addr));
+            addr += 0x4;
+        }
+        if (is_opcode(opcode) == LA)
+        {
+            // `la` pseudo instruciton
             addr += 0x4;
         }
     }
