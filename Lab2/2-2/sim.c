@@ -403,7 +403,7 @@ void handle_jalr(unsigned int cur_inst)
     /*
      * Lab2-2 assignment
      */
-    unsigned int rd = MASK11_7(cur_inst), rs1 = MASK19_15(cur_inst);
+    unsigned int rd = MASK11_7(cur_inst);
     int imm12 = sext(MASK31_20(cur_inst), 12);
     NEXT_LATCHES.REGS[rd] = CURRENT_LATCHES.PC + 4;
 }
