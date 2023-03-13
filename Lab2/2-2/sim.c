@@ -513,7 +513,7 @@ void handle_sh(unsigned int cur_inst)
      * Lab2-2 assignment
      */
     unsigned int rs1 = MASK19_15(cur_inst), rs2 = MASK24_20(cur_inst);
-    int imm12 = (MASK31_25(cur_inst) << 5) + MASK11_7(cur_inst);
+    int imm12 = MASK31_25(cur_inst) + MASK11_7(cur_inst);
     MEMORY[imm12 + CURRENT_LATCHES.REGS[rs1]] = CURRENT_LATCHES.REGS[rs2];
     MEMORY[imm12 + CURRENT_LATCHES.REGS[rs1] + 1] = CURRENT_LATCHES.REGS[rs2] >> 8;
 }
@@ -524,7 +524,7 @@ void handle_sw(unsigned int cur_inst)
      * Lab2-2 assignment
      */
     unsigned int rs1 = MASK19_15(cur_inst), rs2 = MASK24_20(cur_inst);
-    int imm12 = (MASK31_25(cur_inst) << 5) + MASK11_7(cur_inst);
+    int imm12 = MASK31_25(cur_inst) + MASK11_7(cur_inst);
     MEMORY[imm12 + CURRENT_LATCHES.REGS[rs1]] = CURRENT_LATCHES.REGS[rs2];
     MEMORY[imm12 + CURRENT_LATCHES.REGS[rs1] + 1] = CURRENT_LATCHES.REGS[rs2] >> 8;
     MEMORY[imm12 + CURRENT_LATCHES.REGS[rs1] + 2] = CURRENT_LATCHES.REGS[rs2] >> 16;
