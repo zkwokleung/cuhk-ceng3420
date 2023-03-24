@@ -8,18 +8,17 @@
 /*                                                             */
 /***************************************************************/
 
-
 #include "riscv-lc.h"
-
 
 /*
  * execute a cycle
  */
-void cycle() {
+void cycle()
+{
     /*
      * core steps
      */
-    eval_micro_sequencer();   
+    eval_micro_sequencer();
     cycle_memory();
     eval_bus_drivers();
     drive_bus();
@@ -30,32 +29,25 @@ void cycle() {
     CYCLE_COUNT++;
 }
 
-
-void eval_micro_sequencer() {
+void eval_micro_sequencer()
+{
     /*
      * Lab3-1 assignment: implement that x0 is hard-wired to zero
      * i.e., x0 always equal to zero
      */
-    error("Lab3-1 assignment: x0 is hard-wired to zero\n");
+    NEXT_LATCHES.REGS[0] = 0;
+    CURRENT_LATCHES.REGS[0] = 0;
 
     int ird = get_IRD(CURRENT_LATCHES.MICROINSTRUCTION);
     int j = get_J(CURRENT_LATCHES.MICROINSTRUCTION);
-    int _B = blockBMUX(
-        get_LD_BEN(CURRENT_LATCHES.MICROINSTRUCTION),
-        0,
-        CURRENT_LATCHES.B
-    );
+    int _B = blockBMUX(get_LD_BEN(CURRENT_LATCHES.MICROINSTRUCTION), 0, CURRENT_LATCHES.B);
 
     if (ird)
         NEXT_LATCHES.STATE_NUMBER = mask_val(CURRENT_LATCHES.IR, 6, 0);
     else
         NEXT_LATCHES.STATE_NUMBER = j | (_B << 3) | (CURRENT_LATCHES.READY << 2);
 
-    memcpy(
-        NEXT_LATCHES.MICROINSTRUCTION,
-        CONTROL_STATE[NEXT_LATCHES.STATE_NUMBER],
-        sizeof(int) * CONTROL_SIGNAL_BITS
-    );
+    memcpy(NEXT_LATCHES.MICROINSTRUCTION, CONTROL_STATE[NEXT_LATCHES.STATE_NUMBER], sizeof(int) * CONTROL_SIGNAL_BITS);
 
     /*
      * reset
@@ -63,11 +55,11 @@ void eval_micro_sequencer() {
     NEXT_LATCHES.B = 0;
 }
 
-
 /*
  * load the micro-code into the ROM control unit
  */
-void init_control_state(char *ucode_filename) {
+void init_control_state(char *ucode_filename)
+{
     FILE *ucode = open(ucode_filename, "r");
     int i, j, index;
     char line[200];
@@ -75,49 +67,43 @@ void init_control_state(char *ucode_filename) {
     info("load the micro: %s\n", ucode_filename);
 
     /* Read a line for each row in the control store */
-    for(i = 0; i < CONTROL_STATE_ROWS; i++) {
-        if (fscanf(ucode, "%[^\n]\n", line) == EOF) {
-            error(
-                "unexpected end of the file at line %d in the micro-code: %s\n",
-                i + 1, ucode_filename
-            );
+    for (i = 0; i < CONTROL_STATE_ROWS; i++)
+    {
+        if (fscanf(ucode, "%[^\n]\n", line) == EOF)
+        {
+            error("unexpected end of the file at line %d in the micro-code: %s\n", i + 1, ucode_filename);
         }
 
         /* Put in bits one at a time */
         index = 0;
-        for (j = 0; j < CONTROL_SIGNAL_BITS; j++) {
+        for (j = 0; j < CONTROL_SIGNAL_BITS; j++)
+        {
             /* Needs to find enough bits in line */
-            if (line[index] == '\0') {
-                error(
-                    "unexpected end of control bits at line %d in the micro-code: %s\n",
-                    i + 1, ucode_filename
-                );
+            if (line[index] == '\0')
+            {
+                error("unexpected end of control bits at line %d in the micro-code: %s\n", i + 1, ucode_filename);
             }
-            if (line[index] != '0' && line[index] != '1') {
-                error(
-                    "unknown control bit %d at line %d in the micro-code: %s\n",
-                    j + 1, i + 1, ucode_filename
-                );
+            if (line[index] != '0' && line[index] != '1')
+            {
+                error("unknown control bit %d at line %d in the micro-code: %s\n", j + 1, i + 1, ucode_filename);
             }
             /* set the bit in the ROM control unit */
-            CONTROL_STATE[i][j] = (line[index] == '0') ? 0:1;
+            CONTROL_STATE[i][j] = (line[index] == '0') ? 0 : 1;
             index++;
         }
         /* warn about extra bits in line */
-        if (line[index] != '\0') {
-            warn(
-                "extra bit(s) at line %d in the micro-code %s\n",
-                i + 1, ucode_filename
-            );
+        if (line[index] != '\0')
+        {
+            warn("extra bit(s) at line %d in the micro-code %s\n", i + 1, ucode_filename);
         }
     }
 }
 
-
 /*
  * load the binary program into the main memory
  */
-void load_program(char *program_filename) {
+void load_program(char *program_filename)
+{
     FILE *prog;
     int i, word, program_base;
 
@@ -128,13 +114,12 @@ void load_program(char *program_filename) {
     program_base = CODE_BASE_ADDR;
 
     i = 0;
-    while (fscanf(prog, "%x\n", &word) != EOF) {
+    while (fscanf(prog, "%x\n", &word) != EOF)
+    {
         /* make sure the program fit the memory */
-        if (program_base + i >= BYTES_IN_MEM) {
-            error(
-                "program file %s is too long to fit in memory at the address: %x\n",
-                program_filename, i
-            );
+        if (program_base + i >= BYTES_IN_MEM)
+        {
+            error("program file %s is too long to fit in memory at the address: %x\n", program_filename, i);
         }
 
         /*
@@ -154,47 +139,45 @@ void load_program(char *program_filename) {
     info("read %d bytes from the program into the memory.\n\n", i);
 }
 
-
 /*
  * zero out the memory array
  */
-void init_memory() {
+void init_memory()
+{
     int i;
 
     for (i = 0; i < BYTES_IN_MEM; i++)
         MEMORY[i] = 0;
 }
 
-
 /*
  * Load a micro-code and a binary file, and set up the initial state of the machine.
  */
-void initialize(char *ucode_filename, char *program_filename, int num_prog_files) {
+void initialize(char *ucode_filename, char *program_filename, int num_prog_files)
+{
     int i;
     init_control_state(ucode_filename);
 
     init_memory();
-    for (i = 0; i < num_prog_files; i++) {
+    for (i = 0; i < num_prog_files; i++)
+    {
         load_program(program_filename);
-        while(*program_filename++ != '\0');
+        while (*program_filename++ != '\0')
+            ;
     }
     CURRENT_LATCHES.STATE_NUMBER = INITIAL_STATE_NUMBER;
-    memcpy(
-        CURRENT_LATCHES.MICROINSTRUCTION,
-        CONTROL_STATE[INITIAL_STATE_NUMBER],
-        sizeof(int) * CONTROL_SIGNAL_BITS
-    );
+    memcpy(CURRENT_LATCHES.MICROINSTRUCTION, CONTROL_STATE[INITIAL_STATE_NUMBER], sizeof(int) * CONTROL_SIGNAL_BITS);
 
     NEXT_LATCHES = CURRENT_LATCHES;
 
     RUN_BIT = true;
 }
 
-
 /*
  * print the help menu
  */
-void help() {
+void help()
+{
     printf("--------------------- RISCV LC SIM Help ----------------------\n");
     printf("go             -  run a program till the end                  \n");
     printf("run n          -  execute a program for n instructions        \n");
@@ -204,49 +187,34 @@ void help() {
     printf("quit           -  exit the simulator                        \n\n");
 }
 
-
 /*
  * dump a word-aligned region of the main memory to the output file.
  */
-void mdump(FILE *dumpsim_file, int start, int stop) {
+void mdump(FILE *dumpsim_file, int start, int stop)
+{
     int address;
 
     printf("\nmemory content [0x%08x..0x%08x]:\n", start, stop);
     printf("-------------------------------------\n");
     for (address = start; address <= stop; address += 4)
-        printf(
-            "  0x%08x (%d) : 0x%02x%02x%02x%02x\n",
-            address,
-            address,
-            MEMORY[address + 3],
-            MEMORY[address + 2],
-            MEMORY[address + 1],
-            MEMORY[address]
-        );
+        printf("  0x%08x (%d) : 0x%02x%02x%02x%02x\n", address, address, MEMORY[address + 3], MEMORY[address + 2],
+               MEMORY[address + 1], MEMORY[address]);
     printf("\n");
 
     /* dump the memory contents into the dumpsim file */
     fprintf(dumpsim_file, "\nMemory content [0x%08x..0x%08x]:\n", start, stop);
     fprintf(dumpsim_file, "-------------------------------------\n");
     for (address = start; address <= stop; address += 4)
-        fprintf(
-            dumpsim_file,
-            " 0x%08x (%d) : 0x%02x%02x%02x%02x\n",
-            address,
-            address,
-            MEMORY[address + 3],
-            MEMORY[address + 2],
-            MEMORY[address + 1],
-            MEMORY[address]
-        );
+        fprintf(dumpsim_file, " 0x%08x (%d) : 0x%02x%02x%02x%02x\n", address, address, MEMORY[address + 3],
+                MEMORY[address + 2], MEMORY[address + 1], MEMORY[address]);
     fprintf(dumpsim_file, "\n");
 }
-
 
 /*
  * dump current registers and bus values to the output file
  */
-void rdump(FILE *dumpsim_file) {
+void rdump(FILE *dumpsim_file)
+{
     int k;
 
     printf("\ncurrent register/bus values:\n");
@@ -284,11 +252,11 @@ void rdump(FILE *dumpsim_file) {
     printf("\n");
 }
 
-
 /*
  * dump current signals to the output file
  */
-void sdump(FILE *dumpsim_file) {
+void sdump(FILE *dumpsim_file)
+{
     printf("signals: \n");
     printf("  IRD: %d\t", get_IRD(CURRENT_LATCHES.MICROINSTRUCTION));
     printf("  J: %d\n", get_J(CURRENT_LATCHES.MICROINSTRUCTION));
@@ -315,7 +283,7 @@ void sdump(FILE *dumpsim_file) {
     printf("  WE: %d\t", get_WE(CURRENT_LATCHES.MICROINSTRUCTION));
     printf("  RESET: %d\n", get_RESET(CURRENT_LATCHES.MICROINSTRUCTION));
 
-    for(int i = 0; i < CONTROL_SIGNAL_BITS; i++)
+    for (int i = 0; i < CONTROL_SIGNAL_BITS; i++)
         fprintf(dumpsim_file, "%d", CURRENT_LATCHES.MICROINSTRUCTION[i]);
     fprintf(dumpsim_file, "\n");
     fprintf(dumpsim_file, "Signals: \n");
@@ -345,11 +313,11 @@ void sdump(FILE *dumpsim_file) {
     fprintf(dumpsim_file, "  RESET: %d\n", get_RESET(CURRENT_LATCHES.MICROINSTRUCTION));
 }
 
-
 /*
  * simulate the RISCV LC with benchmarks until it is halted
  */
-void go() {
+void go()
+{
     if (RUN_BIT == false)
         error("RISCV LC cannot simulate, and the simulator is halted.\n\n");
 
@@ -360,19 +328,21 @@ void go() {
     info("RISCV LC is halted.\n\n");
 }
 
-
 /*
  * simulate the RISCV LC with benchmarks for n cycles
  */
-void run(int num_cycles) {
+void run(int num_cycles)
+{
     int i;
 
     if (RUN_BIT == false)
         error("RISCV LC cannot simulate, and the simulator is halted.\n\n");
 
     info("simulating for %d cycles...\n\n", num_cycles);
-    for (i = 0; i < num_cycles; i++) {
-        if (CURRENT_LATCHES.PC == TRAPVEC_BASE_ADDR) {
+    for (i = 0; i < num_cycles; i++)
+    {
+        if (CURRENT_LATCHES.PC == TRAPVEC_BASE_ADDR)
+        {
             RUN_BIT = false;
             info("RISCV LC is halted.\n\n");
             break;
@@ -381,11 +351,11 @@ void run(int num_cycles) {
     }
 }
 
-
 /*
  * read a command from the standard input.
  */
-void get_command(FILE *dumpsim_file) {
+void get_command(FILE *dumpsim_file)
+{
     char buffer[20];
     int start, stop, cycles;
 
@@ -394,50 +364,53 @@ void get_command(FILE *dumpsim_file) {
     scanf("%s", buffer);
     printf("\n");
 
-    switch(buffer[0]) {
-        case 'G':
-        case 'g':
-            go();
-            break;
-        case 'M':
-        case 'm':
-            scanf("%i %i", &start, &stop);
-            mdump(dumpsim_file, start, stop);
-            break;
-        case '?':
-        case 'h':
-        case 'H':
-            help();
-            break;
-        case 'Q':
-        case 'q':
-            printf("bye.\n");
-            exit(EXIT_SUCCESS);
-        case 'R':
-        case 'r':
-            if (buffer[1] == 'd' || buffer[1] == 'D')
-                rdump(dumpsim_file);
-            else {
-                scanf("%d", &cycles);
-                run(cycles);
-            }
-            break;
-        case 'S':
-        case 's':
-            sdump(dumpsim_file);
-            break;
-        default:
-            printf("invalid command\n");
-            break;
+    switch (buffer[0])
+    {
+    case 'G':
+    case 'g':
+        go();
+        break;
+    case 'M':
+    case 'm':
+        scanf("%i %i", &start, &stop);
+        mdump(dumpsim_file, start, stop);
+        break;
+    case '?':
+    case 'h':
+    case 'H':
+        help();
+        break;
+    case 'Q':
+    case 'q':
+        printf("bye.\n");
+        exit(EXIT_SUCCESS);
+    case 'R':
+    case 'r':
+        if (buffer[1] == 'd' || buffer[1] == 'D')
+            rdump(dumpsim_file);
+        else
+        {
+            scanf("%d", &cycles);
+            run(cycles);
+        }
+        break;
+    case 'S':
+    case 's':
+        sdump(dumpsim_file);
+        break;
+    default:
+        printf("invalid command\n");
+        break;
     }
 }
 
-
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
     FILE *dumpsim_file = open("dumpsim", "w");
 
     /* Error Checking */
-    if (argc != 3) {
+    if (argc != 3)
+    {
         error("Usage: %s <ucode> <*.bin>\n", argv[0]);
     }
 
