@@ -78,8 +78,11 @@ void cycle_memory()
                 break;
 
             case 0:
-                // I don't know
-
+                // Data size not asserted
+                MEMORY[CURRENT_LATCHES.MAR] = mask_val(CURRENT_LATCHES.MDR, 7, 0);
+                MEMORY[CURRENT_LATCHES.MAR + 1] = mask_val(CURRENT_LATCHES.MDR, 15, 8);
+                MEMORY[CURRENT_LATCHES.MAR + 2] = mask_val(CURRENT_LATCHES.MDR, 23, 16);
+                MEMORY[CURRENT_LATCHES.MAR + 3] = mask_val(CURRENT_LATCHES.MDR, 31, 24);
                 break;
             }
         }
@@ -100,21 +103,23 @@ void cycle_memory()
 
             case ~(0b001 & 0x3):
                 // LH
-                MEM_VAL = sext_unit(MEMORY[CURRENT_LATCHES.MAR], 8);
-                MEM_VAL = MEM_VAL | sext_unit((MEMORY[CURRENT_LATCHES.MAR + 1] << 8), 8);
+                MEM_VAL = sext_unit(MEMORY[CURRENT_LATCHES.MAR] + (MEMORY[CURRENT_LATCHES.MAR + 1] << 8), 16);
                 break;
 
             case ~(0b010 & 0x3):
                 // LW
-                MEM_VAL = sext_unit(MEMORY[CURRENT_LATCHES.MAR], 8);
-                MEM_VAL = MEM_VAL | sext_unit((MEMORY[CURRENT_LATCHES.MAR + 1] << 8), 8);
-                MEM_VAL = MEM_VAL | sext_unit((MEMORY[CURRENT_LATCHES.MAR + 2] << 16), 8);
-                MEM_VAL = MEM_VAL | sext_unit((MEMORY[CURRENT_LATCHES.MAR + 3] << 24), 8);
+                MEM_VAL =
+                    sext_unit(MEMORY[CURRENT_LATCHES.MAR] + (MEMORY[CURRENT_LATCHES.MAR + 1] << 8) +
+                                  (MEMORY[CURRENT_LATCHES.MAR + 2] << 16) + (MEMORY[CURRENT_LATCHES.MAR + 3] << 24),
+                              32);
                 break;
 
             case 0:
-                // I don't know
-
+                // Data size not asserted
+                MEM_VAL =
+                    sext_unit(MEMORY[CURRENT_LATCHES.MAR] + (MEMORY[CURRENT_LATCHES.MAR + 1] << 8) +
+                                  (MEMORY[CURRENT_LATCHES.MAR + 2] << 16) + (MEMORY[CURRENT_LATCHES.MAR + 3] << 24),
+                              32);
                 break;
             }
         }
