@@ -182,6 +182,9 @@ void go();
 void run(int);
 void get_command(FILE *);
 
+void write_memory(unsigned int, unsigned int, int);
+int read_memory(unsigned int, unsigned int);
+
 /*
  * core function declarations
  */
