@@ -79,9 +79,20 @@ void cycle_memory()
 
             case 0:
                 // Data size not asserted
-                MEMORY[CURRENT_LATCHES.MAR] = 0;
+                MEMORY[CURRENT_LATCHES.MAR] = MASK7_0(CURRENT_LATCHES.MDR);
+                MEMORY[CURRENT_LATCHES.MAR + 1] = MASK15_8(CURRENT_LATCHES.MDR);
+                MEMORY[CURRENT_LATCHES.MAR + 2] = MASK23_16(CURRENT_LATCHES.MDR);
+                MEMORY[CURRENT_LATCHES.MAR + 3] = MASK31_24(CURRENT_LATCHES.MDR);
                 break;
             }
+            warn("*************************MEMORY[CURRENT_LATCHES.MAR] = %d (0x%x)\n", MEMORY[CURRENT_LATCHES.MAR],
+                 MEMORY[CURRENT_LATCHES.MAR]);
+            warn("*************************MEMORY[CURRENT_LATCHES.MAR + 1] = %d (0x%x)\n",
+                 MEMORY[CURRENT_LATCHES.MAR + 1], MEMORY[CURRENT_LATCHES.MAR + 1]);
+            warn("*************************MEMORY[CURRENT_LATCHES.MAR + 2] = %d (0x%x)\n",
+                 MEMORY[CURRENT_LATCHES.MAR + 2], MEMORY[CURRENT_LATCHES.MAR + 2]);
+            warn("*************************MEMORY[CURRENT_LATCHES.MAR + 3] = %d (0x%x)\n",
+                 MEMORY[CURRENT_LATCHES.MAR + 3], MEMORY[CURRENT_LATCHES.MAR + 3]);
         }
         else
         {
@@ -100,19 +111,24 @@ void cycle_memory()
 
             case ~(0b001 & 0x3):
                 // LH
-                MEM_VAL = sext_unit(MEMORY[CURRENT_LATCHES.MAR], 8) + sext_unit(MEMORY[CURRENT_LATCHES.MAR + 1], 16);
+                MEM_VAL = sext_unit(MEMORY[CURRENT_LATCHES.MAR] + (MEMORY[CURRENT_LATCHES.MAR + 1] << 8), 16);
                 break;
 
             case ~(0b010 & 0x3):
                 // LW
-                MEM_VAL = sext_unit(MEMORY[CURRENT_LATCHES.MAR], 8) + sext_unit(MEMORY[CURRENT_LATCHES.MAR + 1], 16) +
-                          sext_unit(MEMORY[CURRENT_LATCHES.MAR + 2], 24) +
-                          sext_unit(MEMORY[CURRENT_LATCHES.MAR + 3], 32);
-                break;
+                MEM_VAL =
+                    sext_unit(MASK7_0(MEMORY[CURRENT_LATCHES.MAR]) + (MASK7_0(MEMORY[CURRENT_LATCHES.MAR + 1]) << 8) +
+                                  (MASK7_0(MEMORY[CURRENT_LATCHES.MAR + 2]) << 16) +
+                                  (MASK7_0(MEMORY[CURRENT_LATCHES.MAR + 3]) << 24),
+                              32);
 
             case 0:
                 // Data size not asserted
-                MEM_VAL = 0;
+                MEM_VAL =
+                    sext_unit(MASK7_0(MEMORY[CURRENT_LATCHES.MAR]) + (MASK7_0(MEMORY[CURRENT_LATCHES.MAR + 1]) << 8) +
+                                  (MASK7_0(MEMORY[CURRENT_LATCHES.MAR + 2]) << 16) +
+                                  (MASK7_0(MEMORY[CURRENT_LATCHES.MAR + 3]) << 24),
+                              32);
                 break;
             }
         }
