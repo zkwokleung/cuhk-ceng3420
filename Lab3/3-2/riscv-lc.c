@@ -85,14 +85,6 @@ void cycle_memory()
                 MEMORY[CURRENT_LATCHES.MAR + 3] = MASK31_24(CURRENT_LATCHES.MDR);
                 break;
             }
-            warn("*************************MEMORY[CURRENT_LATCHES.MAR] = %d (0x%x)\n", MEMORY[CURRENT_LATCHES.MAR],
-                 MEMORY[CURRENT_LATCHES.MAR]);
-            warn("*************************MEMORY[CURRENT_LATCHES.MAR + 1] = %d (0x%x)\n",
-                 MEMORY[CURRENT_LATCHES.MAR + 1], MEMORY[CURRENT_LATCHES.MAR + 1]);
-            warn("*************************MEMORY[CURRENT_LATCHES.MAR + 2] = %d (0x%x)\n",
-                 MEMORY[CURRENT_LATCHES.MAR + 2], MEMORY[CURRENT_LATCHES.MAR + 2]);
-            warn("*************************MEMORY[CURRENT_LATCHES.MAR + 3] = %d (0x%x)\n",
-                 MEMORY[CURRENT_LATCHES.MAR + 3], MEMORY[CURRENT_LATCHES.MAR + 3]);
         }
         else
         {
@@ -111,24 +103,19 @@ void cycle_memory()
 
             case ~(0b001 & 0x3):
                 // LH
-                MEM_VAL = sext_unit(MEMORY[CURRENT_LATCHES.MAR] + (MEMORY[CURRENT_LATCHES.MAR + 1] << 8), 16);
+                MEM_VAL = sext_unit(MEMORY[CURRENT_LATCHES.MAR] | (MEMORY[CURRENT_LATCHES.MAR + 1] << 8), 16);
                 break;
 
             case ~(0b010 & 0x3):
                 // LW
-                MEM_VAL =
-                    sext_unit(MASK7_0(MEMORY[CURRENT_LATCHES.MAR]) + (MASK7_0(MEMORY[CURRENT_LATCHES.MAR + 1]) << 8) +
-                                  (MASK7_0(MEMORY[CURRENT_LATCHES.MAR + 2]) << 16) +
-                                  (MASK7_0(MEMORY[CURRENT_LATCHES.MAR + 3]) << 24),
-                              32);
+                MEM_VAL = MEMORY[CURRENT_LATCHES.MAR] | (MEMORY[CURRENT_LATCHES.MAR + 1] << 8) |
+                          (MEMORY[CURRENT_LATCHES.MAR + 2] << 16) | (MEMORY[CURRENT_LATCHES.MAR + 3] << 24);
+                break;
 
             case 0:
                 // Data size not asserted
-                MEM_VAL =
-                    sext_unit(MASK7_0(MEMORY[CURRENT_LATCHES.MAR]) + (MASK7_0(MEMORY[CURRENT_LATCHES.MAR + 1]) << 8) +
-                                  (MASK7_0(MEMORY[CURRENT_LATCHES.MAR + 2]) << 16) +
-                                  (MASK7_0(MEMORY[CURRENT_LATCHES.MAR + 3]) << 24),
-                              32);
+                MEM_VAL = MEMORY[CURRENT_LATCHES.MAR] | (MEMORY[CURRENT_LATCHES.MAR + 1] << 8) |
+                          (MEMORY[CURRENT_LATCHES.MAR + 2] << 16) | (MEMORY[CURRENT_LATCHES.MAR + 3] << 24);
                 break;
             }
         }
@@ -185,7 +172,8 @@ void latch_datapath_values()
         /*
          *  Lab3-2 assignment
          */
-        NEXT_LATCHES.PC = pc_mux(get_PCMUX(CURRENT_LATCHES.MICROINSTRUCTION), CURRENT_LATCHES.PC + 4, BUS);
+        NEXT_LATCHES.PC =
+            pc_mux(get_PCMUX(CURRENT_LATCHES.MICROINSTRUCTION), CURRENT_LATCHES.PC + 4, CURRENT_LATCHES.PC + BUS - 4);
     }
     /* RESET */
     if (get_RESET(CURRENT_LATCHES.MICROINSTRUCTION))
