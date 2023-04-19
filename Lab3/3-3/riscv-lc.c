@@ -77,7 +77,7 @@ void eval_bus_drivers()
     /* output of the shift function unit */
     value_of_shift_function_unit = shift_function_unit(
         mask_val(CURRENT_LATCHES.IR, 14, 12), mask_val(CURRENT_LATCHES.IR, 31, 25),
-        rs1_en(CURRENT_LATCHES.REGS[mask_val(CURRENT_LATCHES.IR, 19, 15)], get_RS1En(CURRENT_LATCHES.MICROINSTRUCTION)),
+        rs1_en(get_RS1En(CURRENT_LATCHES.MICROINSTRUCTION), CURRENT_LATCHES.REGS[mask_val(CURRENT_LATCHES.IR, 19, 15)]),
         rs2_mux(get_RS2MUX(CURRENT_LATCHES.MICROINSTRUCTION),
                 rs2_en(get_RS2En(CURRENT_LATCHES.MICROINSTRUCTION),
                        CURRENT_LATCHES.REGS[mask_val(CURRENT_LATCHES.IR, 24, 20)]),
@@ -127,15 +127,19 @@ void drive_bus()
     case 2:
         // GateALUSHF is 1
         BUS = value_of_GateALUSHF;
+        break;
     case 4:
         // GatePC is 1
         BUS = value_of_GatePC;
+        break;
     case 8:
         // GateRS2 is 1
         BUS = value_of_GateRS2;
+        break;
     case 16:
         // GateMDR is 1
         BUS = value_of_GateMDR;
+        break;
     default:
         BUS = 0;
         warn("unknown gate drivers for BUS\n");
